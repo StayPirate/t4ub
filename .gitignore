@@ -1,0 +1,10 @@
+uncpio/*
+iso-scam/initramfs/image/*
+iso-scam/initramfs/bin/*
+*.pyc
+__pycache__/
+*.key
+*.crt
+*.csr
+*.pub
+*.orig
