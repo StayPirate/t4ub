@@ -1,13 +1,13 @@
 # Thanks For Your Box
 
-**t4ub** is a framework which let you easy modify the beavior of an **initiramfs**[^initramfs].
+**t4ub** is a framework which let you easy modify the beavior of an **initiramfs**.
 For instance you can:
 > * keylog luks's key of a root partition
 > * wait for rebuild the real filesystem then deploy a backdoor
 >  * send luks's key to your C2S
 >  * reverse a rootshell
 
-## [^initramfs]: Initramfs
+## Initramfs
 It's not mandatory to boot GNU/Linux withit, but since the configuration of OSes became much costumizable, every distro uses it.
 *Linux, the kernel, needs **userspace tools to make stuff***. So if the real filesystem (your OS) relay in a logical volume (LVM, RAID) or root partition is reacable over networks (NFS) or just encrypted (LUKS) then the kernel needs tools to rebuild, decrypt or configure a network interface before access the real OS.
 
@@ -51,7 +51,7 @@ For instance this is a rules that copy an executable called *easteregg* into the
 ```
 More information of how to write rules can be found [here](config).
 
-# Attack's vector
+## Attack's vector
 If you have physical access to the (offline) disk, the boot partition or the ESP is not encrypted and you can run t4ub and let it do the bad stuff.
 But if you want to run remotely, you have to use a social engineering component.
 I thought to realize a custom live GNU/Linux distro. When you run a live on your PC you let it have access to entire your hard drive. Maybe you can think that is not a problem because you disk use encryption, but t4ub attacks the boot and the esp partition. So mainwhile you are trying the live, t4ub in background mount and analyze your disk in search of initramfs, everytime it find one, it gonna decompress, patch (infect) and rebuilt it.
