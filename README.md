@@ -11,7 +11,7 @@ For instance you can:
 >  * reverse a rootshell
 
 ## Initramfs
-It's not mandatory booting GNU/Linux with it, but since the configuration of OSes became much customizable, every distro uses it.
+Isn't mandatory booting GNU/Linux with it, but since the configuration of OSes became much customizable, every distro uses it.
 *Linux, the kernel, needs *userspace tools to make stuff**.
 
 If the real filesystem (your OS) rely into logical volume (LVM, RAID) or root partition is reachable over network (NFS) or just encrypted (LUKS) then the kernel needs tools to rebuild, decrypt or configure a network interface before access the real OS.
