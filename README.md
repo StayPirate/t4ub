@@ -1,6 +1,7 @@
 <p align="center">
-  <img src="https://wiki.staypirate.org/images/Skullbox.png" alt="t4ub logo"/>
-</p># Thanks For Your Box
+  <img src="https://wiki.staypirate.org/images/Skullbox.png"  height="150" width="150" alt="t4ub logo"/>
+</p>
+# Thanks For Your Box
 
 **t4ub** is a framework which lets you easy modify the behavior of an [**initiramfs**](#initramfs).
 For instance you can:
