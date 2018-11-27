@@ -1,80 +1,74 @@
-# Thanks For Your Box
-<p align="center">
-  <img src="https://wiki.staypirate.org/images/Skullbox.png"  height="150" width="150" alt="t4ub logo"/>
-</p>
-**t4ub** is a framework which lets you easy modify the behavior of [**initiramfs**](#initramfs).
+# T4UB
 
-For instance you can:
-> * keylog luks's key of a root partition
-> * wait for rebuild the real filesystem then deploy a backdoor just before the chroot
->  * send luks's key to your C2S
->  * reverse a rootshell
+<p align="center">
+  <img src="http://wiki.staypirate.org/images/Skullbox.png"  height="150" width="150" alt="t4ub logo"/>
+</p>
+This framework detects and edits [initramfs](#initramfs) archives from different kinds of partition.
+
+For instance you could:
+> * Deploy a keylogger to grab the input password to unlock a LUKS root partition.
+> * Wait until the root filesystem has been rebuilt, hence copy a backdoor in it. Just before the boot-chain continue with the chroot.
+>  * As soon as internet will be available, you can phone home and send back the grabbed key along with a copy of the LUKS header.
+>  * Get root access via a reverse-shell.
 
 ## Initramfs
-Isn't mandatory booting GNU/Linux with it, but since the configuration of OSes became much customizable, every distro uses it.
-*Linux, the kernel, needs *userspace tools to make stuff**.
 
-If the real filesystem (your OS) rely into logical volume (LVM, RAID) or root partition is reachable over network (NFS) or just encrypted (LUKS) then the kernel needs tools to rebuild, decrypt or configure a network interface before access the real OS.
+This is something quite common to find in today boot-chains. As more OSes configuration become complex, as more needing of a complete mini-system is needed during the boot process.
 
-*In other words initramfs is a little OS used for boot the real OS.*
+*The kernel Linux cannot do much without the right tools.* 
 
-####Bootchain is something like this:
+Think about the kernel like a naked man, and to the root filesystem (or in this case the initramfs) like clothes and daily tools.  
+In the beginning, the kernel is mapped to the central memory and it starts to run, but in order to use the tools installed in the operative system, which reside into the root filesystem, he needs other tools to help hime to mount the root filesystem. This is where the initramfs finds its usefulness, it is a small temporary filesytem containing all the tools and modules needed to decrypt/rebuild/connect or just mount the root filesystem where the OS is located. Once this last partition is mounted the kernel executes a chroot (change root) and finally starts to use the main root filesystem, where all your software reside. Following the first example, think about the chroot as that man wearing the temporary clothes and tools, hence he removes them and he wears the ultimate clothes and tools. 
 
-Bootloader->Load kernel and decompressed initramfs in RAM->Kernel uses tools inside initramfs for rebuild and mount the real filesystem->Kernel chroot into the real filesystem
+#### Where usually initramfs is located?
 
-#### Where initramfs can be found?
-Initramfs usually resides in the boot partition together with the kernel. The boot partition needs to be **not** encrypted to allow the bootloader boots the OS.
+It's easy to find it in the partition where the kernel is stored, usually the boot partition or the [ESP](https://en.wikipedia.org/wiki/EFI_system_partition). These partitions need to not be encrypted to allow the bootloader boots the OS.
 
-Some EFI bootloaders permit encryption of boot partition, but they require kernel and initramfs into ESP (Efi System Partition) that, again, must not be encrypted. Hence you'll still be able to modify the initramfs.
+Even if some EFI bootloaders allows encryption of boot partition, they still require the kernel and the initramfs to be stored in plaintext into the ESP. Then you will still be able to tamper the initramfs.
 
-#### What does it seems?
+#### What does the initramf looklike?
+
 ```bash
 $file /boot/initramfs-linux.img
 /boot/initramfs-linux.img: gzip compressed data
 ```
-It use to be a compressed archive, cpio or tar. Each distribution uses its prefered form.
+It's mostly a compressed archive, cpio or tar. Each distribution uses its own favorite design.
 
-#### How and when it's built?
-There are different tools used to do that, and again it depend on the distro.
-More known tools are *mkinitcpio* and *dracut*.
-They  run automatically when you update kernel, generating the initramfs putting inside everything is needed for rebuild and mount the real filesystem.
+#### When and how it is built?
 
-> For instance those tools can puts inside the cpio some firmware needed from the kernel to use a wifi card or the cryptsetup static binary for decrypting the root partition.
+There are many different tools to generate an initramfs, and still, it depends which GNU/Linux distribution you are using. The more known automated tools are *mkinitcpio* and *dracut*. For instance, these are automatically triggered when you update your kernel.  
+The creation of the initramfs is as easy as creating a file system directory, copying in it just the tools needed to mount the root partition early in the boot, along with their dependencies (libraries, modules, firmware, or even other tools).
 
 ## Why t4ub?
-t4ub is able to quikly search one or more initramfs: uncompress it, patch it following [rules](#rules) that you give, then rebuild and replace it. *Everything in a few seconds.*
+
+t4ub can quickly search one or more initramfs: uncompress them, patch them according to the [rules](#rules) you specify inside the framework, then rebuild and replace them in place of the original ones.
 
 #### Rules
-It's easy to interact with this framework, you just have to write rules into a YMAL file, in the config directory.
 
-For instance this is a rule that copies an executable called *easteregg* into /bin directory of initramfs
+Rules are in YAML, and you can easily create new ones by adding them to the [config](/config) directory.
+
+For instance, the following rule copies an executable called *malicious* into the /usr/bin directory of a found initramfs:
 ```ymal
 - rule_name: "copy backdoor"
   copy:
-    - /bin/easteregg
-  dest: /easteregg
+    - /usr/bin/malicious
+  dest: /malicious
 ```
-More information of how to write rules can be found [here](config).
+More information about how to write rules can be found [here](config).
 
-## Attack's vector
-If you already have physical access to the (offline) disk, the boot partition or the ESP are not encrypted and you are able run t4ub letting it do the bad stuff to it.
+## Attack Scenario
 
-But if you want run it **remotely**, you need to use some *social engineering*.
-
-I thought to realize a customized GNU/Linux live distro.
-
-When you run a live on your PC, **you let it access to entire your hard drive**.
-
-Maybe you can think that is not a problem because your disk use encryption, but t4ub attacks the boot and the esp partition.
-
-So meanwhile you are using the live, in background t4ub is mounting and analyzing your partitions looking for initramfs, everytime it find one it decompress, patch (infect) and rebuilt it.
+If you already have physical access to the (offline) disk, you can just run t4ub from a a live USB stick and leave it to do the dirty work. 
+But if you want to run it on a remote target, then you need to think about a *social engineering* scheme.  
+If you run a live operative system on your computer, **you are actually leaving it access to your entire hard drive**. You may think there is not a problem since your hard disk is encrypted, but t4ub infects the boot or the ESP unencrypted partition. After your first successful boot, your root filesystem will be infected as well.  
+Let say you have realized your custom GNU\Linux live distribution, you can now convince your victim to download and try it out on his asset. While he is discovering all the features of your new great live distro, in background t4ub is mounting all the unencrypted partitions looking for initramfses. For each match, it decompresses it, infects it and overrides it.
 
 ### Virt-what
-> *And what if the victim run the live in a *VM* instead of *their own machine*?*
 
-Virt-what is a script maintained by **Red-Hat** that is able to understand if it is run under a virtualized environment or not.
+> *What if the victim runs the live distro inside a VM, instead of run it on his physical machine?*
 
-I use it into the *live's bootchain* to make a simple check: if we are running in an VM, then we stop booting printing out an error like
-> Virtual machine module error.
+You won't be able to infect the host boot partition.
 
-If we made a good job with *social engineering*, the victim is gonna run the iso (the live) without any hypervisor. And we'll have access to their boot/esp partition <3.
+[Virt-what](https://people.redhat.com/rjones/virt-what/) is a **Red Hat** maintained script, it is able to figure out if the running environment is virtualized or not.
+
+I use it during the boot-chain of the live distro I've made, and it makes a simple check: if the distro is running in a VM, it stops booting and prints out an error like: ```Virtual machine module error```. If we did a good job with our *social engineering* skills, the victim then may run the distro directly on his machine, and we finally get access to the host's boot/esp partition.

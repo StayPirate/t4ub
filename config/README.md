@@ -1,5 +1,5 @@
 # Rules
 
-Guide for how to write rules is coming.
+TODO: this guide has still not been written.
 
-Mainwhile you can check those two example.
+Meanwhile, you can check out the two examples in this directory.
