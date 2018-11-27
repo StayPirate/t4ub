@@ -1,7 +1,7 @@
 # T4UB
 
 <p align="center">
-  <img src="http://wiki.staypirate.org/images/Skullbox.png"  height="150" width="150" alt="t4ub logo"/>
+  <img src="https://i.ibb.co/sJ0dvyf/Skullbox.png"  height="150" width="150" alt="t4ub logo"/>
 </p>
 This framework detects and edits [initramfs](#initramfs) archives from different kinds of partition.
 
